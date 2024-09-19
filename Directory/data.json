@@ -31,7 +31,7 @@
     {
       "key": "file01",
       "amount": 5,
-      "fole": {
+      "file": {
         "name": "/text"
       }
     }
