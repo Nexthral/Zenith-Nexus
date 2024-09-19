@@ -27,6 +27,13 @@
       "file": {
         "name": "settings.xml"
       }
+    },
+    {
+      "key": "file01",
+      "amount": 5,
+      "fole": {
+        "name": "/text"
+      }
     }
   ]
 }
