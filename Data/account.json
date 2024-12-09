@@ -1,0 +1,9 @@
+{
+  "usuario": {
+    "cpf": "123.456.789-00",
+    "senha": "senha123",
+    "email": "usuario@exemplo.com",
+    "nome": "João da Silva",
+    "saldo": 1500.75
+  }
+}
