@@ -1,24 +1,1120 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title> Cortex AI </title>
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      overflow: hidden;
-    }
-    iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-  </style>
-</head>
-<body>
-  <iframe src="https://app--cortex-ai-c60820b6.base44.app" allowfullscreen></iframe>
-</body>
-</html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Aurora IA</title>
+    <style>
+      :root {
+        --aurora-cyan: #7ee6ff;
+        --aurora-ice: #cfe9ff;
+        --aurora-deep: #0e3a5b;
+        --aurora-glow: #9ff3ff;
+        --text-main: #e9f7ff;
+        --text-dim: #cce6f3;
+        --button-bg: #5fd0ea;
+        --button-bg-hover: #7ee6ff;
+        --button-border: #cfe9ff;
+        --shadow: 0 10px 30px rgba(126, 230, 255, 0.25);
+      }
+
+      * { box-sizing: border-box; }
+      html, body {
+        height: 100%;
+        margin: 0;
+        font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        background: #000000;
+        color: var(--text-main);
+        overflow: hidden;
+      }
+      
+      /* Background video on the right, shifted left */
+      .bg-video {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translate(-44%, -50%);
+        height: 100vh;
+        width: auto;
+        object-fit: cover;
+        filter: saturate(110%) contrast(110%);
+        opacity: 0.85;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      /* Main content */
+      .content {
+        position: relative;
+        z-index: 2;
+        height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+        text-align: center;
+      }
+      .stack {
+        display: grid;
+        gap: 22px;
+        align-items: center;
+        justify-items: center;
+      }
+      .title {
+        margin: 0;
+        font-weight: 700;
+        font-size: clamp(24px, 3vw, 36px);
+        color: var(--text-dim);
+        letter-spacing: 0.02em;
+      }
+
+      .cta-button {
+        appearance: none;
+        border: 1px solid var(--button-border);
+        background: linear-gradient(180deg, var(--button-bg) 0%, #52c3de 100%);
+        color: #043a4f;
+        padding: 16px 28px;
+        border-radius: 14px;
+        font-size: clamp(16px, 1.4vw, 18px);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        box-shadow: var(--shadow);
+        cursor: pointer;
+        position: relative;
+        transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        overflow: hidden;
+        isolation: isolate;
+        min-width: 140px;
+        height: 56px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .cta-button::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(140% 100% at 0% 0%, rgba(255,255,255,0.35), transparent 40%),
+                    linear-gradient(90deg, rgba(255,255,255,0.12), transparent 30%, transparent 70%, rgba(255,255,255,0.12));
+        mix-blend-mode: soft-light;
+        opacity: 0.6;
+        transition: opacity .25s ease;
+        pointer-events: none;
+        z-index: -1;
+      }
+      .cta-button:hover {
+        transform: translateY(-2px) scale(1.02);
+        background: linear-gradient(180deg, var(--button-bg-hover) 0%, #69d9f0 100%);
+        box-shadow: 0 14px 40px rgba(126,230,255,0.35);
+        filter: saturate(110%);
+      }
+      .cta-button:active { transform: translateY(0) scale(0.995); }
+
+      /* Expanded text input state */
+      .cta-button.expanded {
+        width: 700px;
+        height: 280px;
+        border-radius: 20px;
+        padding: 24px;
+        background: linear-gradient(180deg, rgba(95, 208, 234, 0.95) 0%, rgba(82, 195, 222, 0.95) 100%);
+        backdrop-filter: blur(10px);
+        border: 2px solid rgba(207, 233, 255, 0.6);
+        box-shadow: 0 20px 60px rgba(126, 230, 255, 0.4);
+        cursor: default;
+        transform: scale(1.05);
+      }
+
+      .typing-text {
+        color: #043a4f;
+        font-size: clamp(16px, 1.4vw, 18px);
+        line-height: 1.6;
+        font-weight: 500;
+        text-align: left;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        padding: 12px;
+        border: none;
+        background: transparent;
+        resize: none;
+        outline: none;
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+      }
+
+      .typing-cursor {
+        display: inline-block;
+        width: 2px;
+        height: 1.2em;
+        background: #043a4f;
+        margin-left: 2px;
+        animation: blink 1s infinite;
+      }
+
+      @keyframes blink {
+        0%, 50% { opacity: 1; }
+        51%, 100% { opacity: 0; }
+      }
+
+      /* Cursor blocking overlay */
+      .cursor-block {
+        position: fixed;
+        inset: 0;
+        z-index: 10;
+        cursor: not-allowed;
+        background: transparent;
+        pointer-events: all;
+      }
+
+      /* Chat interface */
+      .chat-container {
+        position: fixed;
+        inset: 0;
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
+        z-index: 20;
+        display: none;
+        flex-direction: column;
+        opacity: 0;
+        transform: scale(0.9);
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .chat-container.active {
+        display: flex;
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      .chat-header {
+        padding: 20px;
+        border-bottom: 1px solid rgba(126, 230, 255, 0.2);
+        background: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+      }
+
+      .chat-title {
+        color: var(--aurora-cyan);
+        font-size: 24px;
+        font-weight: 700;
+        text-align: center;
+        margin: 0;
+        text-shadow: 0 0 20px rgba(126, 230, 255, 0.5);
+      }
+
+      .chat-messages {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+
+      .message {
+        max-width: 80%;
+        padding: 20px 24px;
+        border-radius: 18px;
+        font-size: 18px;
+        line-height: 1.6;
+        animation: messageSlide 0.5s ease-out;
+      }
+
+      .message.user {
+        background: linear-gradient(135deg, var(--button-bg) 0%, #52c3de 100%);
+        color: #043a4f;
+        align-self: flex-end;
+        margin-left: auto;
+      }
+
+      .message.aurora {
+        background: rgba(126, 230, 255, 0.1);
+        color: var(--text-main);
+        border: 1px solid rgba(126, 230, 255, 0.3);
+        align-self: flex-start;
+        margin-right: auto;
+      }
+
+      @keyframes messageSlide {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .typing-indicator {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: var(--aurora-cyan);
+        font-style: italic;
+      }
+
+      .typing-dots {
+        display: flex;
+        gap: 4px;
+      }
+
+      .typing-dot {
+        width: 8px;
+        height: 8px;
+        background: var(--aurora-cyan);
+        border-radius: 50%;
+        animation: typingDot 1.4s infinite ease-in-out;
+      }
+
+      .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+      .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+      @keyframes typingDot {
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1); opacity: 1; }
+      }
+
+      /* Voice response interface */
+      .voice-interface {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(126, 230, 255, 0.15) 0%, rgba(0, 0, 0, 0.95) 70%);
+        z-index: 30;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: scale(0.8) rotateY(15deg);
+        transition: all 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(20px);
+      }
+
+      .voice-interface.active {
+        display: flex;
+        opacity: 1;
+        transform: scale(1) rotateY(0deg);
+      }
+
+      .voice-wave-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 30px;
+      }
+
+      .voice-wave {
+        display: flex;
+        gap: 6px;
+        align-items: center;
+        padding: 20px 40px;
+        background: rgba(126, 230, 255, 0.1);
+        border-radius: 50px;
+        border: 2px solid rgba(126, 230, 255, 0.3);
+        backdrop-filter: blur(10px);
+        box-shadow: 0 0 30px rgba(126, 230, 255, 0.2);
+      }
+
+      .wave-bar {
+        width: 6px;
+        background: linear-gradient(180deg, var(--aurora-cyan) 0%, var(--aurora-ice) 100%);
+        border-radius: 3px;
+        animation: waveAnimation 1.8s infinite ease-in-out;
+        box-shadow: 0 0 10px rgba(126, 230, 255, 0.5);
+      }
+
+      .wave-bar:nth-child(1) { height: 15px; animation-delay: 0s; }
+      .wave-bar:nth-child(2) { height: 35px; animation-delay: 0.15s; }
+      .wave-bar:nth-child(3) { height: 25px; animation-delay: 0.3s; }
+      .wave-bar:nth-child(4) { height: 45px; animation-delay: 0.45s; }
+      .wave-bar:nth-child(5) { height: 30px; animation-delay: 0.6s; }
+      .wave-bar:nth-child(6) { height: 50px; animation-delay: 0.75s; }
+      .wave-bar:nth-child(7) { height: 40px; animation-delay: 0.9s; }
+      .wave-bar:nth-child(8) { height: 20px; animation-delay: 1.05s; }
+      .wave-bar:nth-child(9) { height: 35px; animation-delay: 1.2s; }
+      .wave-bar:nth-child(10) { height: 25px; animation-delay: 1.35s; }
+
+      @keyframes waveAnimation {
+        0%, 100% { 
+          transform: scaleY(0.3); 
+          opacity: 0.6; 
+          box-shadow: 0 0 5px rgba(126, 230, 255, 0.3);
+        }
+        50% { 
+          transform: scaleY(1.2); 
+          opacity: 1; 
+          box-shadow: 0 0 15px rgba(126, 230, 255, 0.8);
+        }
+      }
+
+      .voice-status {
+        color: var(--aurora-cyan);
+        font-size: 24px;
+        font-weight: 500;
+        text-align: center;
+        opacity: 0.8;
+        text-shadow: 0 0 10px rgba(126, 230, 255, 0.5);
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .voice-wave-container {
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .voice-wave-container.moved-left {
+        transform: translateX(-40%);
+      }
+
+      .voice-wave-container.moved-right {
+        transform: translateX(40%);
+      }
+
+      /* Video interface */
+      .video-interface {
+        position: fixed;
+        inset: 0;
+        background: radial-gradient(circle at center, rgba(126, 230, 255, 0.1) 0%, rgba(0, 0, 0, 0.95) 70%);
+        z-index: 35;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transform: scale(0.9) rotateX(10deg);
+        transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        backdrop-filter: blur(20px);
+      }
+
+      .video-interface.active {
+        display: flex;
+        opacity: 1;
+        transform: scale(1) rotateX(0deg);
+      }
+
+      .video-container {
+        position: relative;
+        width: 80%;
+        max-width: 1200px;
+        aspect-ratio: 16/9;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 0 50px rgba(126, 230, 255, 0.3);
+        border: 2px solid rgba(126, 230, 255, 0.4);
+      }
+
+      .video-player {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        background: #000;
+      }
+
+      .video-thumbnail {
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(126, 230, 255, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 20px;
+        transition: all 0.5s ease;
+      }
+
+      .video-thumbnail.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      .play-button {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--aurora-cyan) 0%, var(--aurora-ice) 100%);
+        border: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        color: #043a4f;
+        cursor: pointer;
+        box-shadow: 0 0 30px rgba(126, 230, 255, 0.5);
+        transition: all 0.3s ease;
+      }
+
+      .play-button:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 40px rgba(126, 230, 255, 0.8);
+      }
+
+      .video-title {
+        color: var(--text-main);
+        font-size: 28px;
+        font-weight: 600;
+        text-align: center;
+        text-shadow: 0 0 20px rgba(126, 230, 255, 0.5);
+      }
+
+      .video-loading {
+        color: var(--aurora-cyan);
+        font-size: 20px;
+        text-align: center;
+        opacity: 0.8;
+      }
+
+      /* Transition overlays */
+      .transition-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 25;
+        background: linear-gradient(45deg, 
+          rgba(126, 230, 255, 0.1) 0%, 
+          rgba(207, 233, 255, 0.05) 50%, 
+          rgba(126, 230, 255, 0.1) 100%);
+        opacity: 0;
+        transform: scale(1.1);
+        transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        pointer-events: none;
+      }
+
+      .transition-overlay.active {
+        opacity: 1;
+        transform: scale(1);
+      }
+
+      /* Fade transitions */
+      .fade-out {
+        opacity: 0;
+        transform: scale(0.95);
+        transition: all 0.6s ease-out;
+      }
+
+      .fade-in {
+        opacity: 1;
+        transform: scale(1);
+        transition: all 0.8s ease-in;
+      }
+
+      /* Snow canvas */
+      canvas#snow {
+        position: fixed;
+        inset: 0;
+        z-index: 1;
+        pointer-events: none;
+      }
+
+      /* Responsiveness for PC/notebook is inherent; tweak container widths if needed */
+      @media (min-width: 1200px) {
+        .stack { gap: 26px; }
+      }
+    </style>
+  </head>
+  <body>
+    
+    <canvas id="snow"></canvas>
+    <video class="bg-video" src="assets/girl.mp4" autoplay muted loop playsinline></video>
+
+    <main class="content">
+      <div class="stack">
+        <h1 class="title" id="main-title">prontos para oomeçar?</h1>
+        <button class="cta-button" id="start-button" type="button">Começar</button>
+      </div>
+    </main>
+
+    <!-- Cursor blocking overlay -->
+    <div class="cursor-block" id="cursor-block" style="display: none;"></div>
+
+    <!-- Chat interface -->
+    <div class="chat-container" id="chat-container">
+      <div class="chat-header">
+        <h2 class="chat-title">Aurora IA</h2>
+      </div>
+      <div class="chat-messages" id="chat-messages">
+        <!-- Messages will be added here -->
+      </div>
+    </div>
+
+    <!-- Voice response interface -->
+    <div class="voice-interface" id="voice-interface">
+      <div class="voice-wave-container">
+        <div class="voice-wave">
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <div class="voice-status" id="voice-status">Aurora está falando...</div>
+      </div>
+    </div>
+
+    <!-- Video interface -->
+    <div class="video-interface" id="video-interface">
+      <div class="video-container">
+        <video class="video-player" id="video-player" preload="metadata">
+          <source src="" type="video/mp4">
+        </video>
+        <div class="video-thumbnail" id="video-thumbnail">
+          <button class="play-button" id="play-button">▶</button>
+          <div class="video-title" id="video-title">Carregando vídeo...</div>
+          <div class="video-loading" id="video-loading">Preparando apresentação...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Transition overlay -->
+    <div class="transition-overlay" id="transition-overlay"></div>
+
+    <script>
+      // Enhanced button click handler with full functionality
+      (function () {
+        const startButton = document.getElementById('start-button');
+        const mainTitle = document.getElementById('main-title');
+        const cursorBlock = document.getElementById('cursor-block');
+        const chatContainer = document.getElementById('chat-container');
+        const chatMessages = document.getElementById('chat-messages');
+        const voiceInterface = document.getElementById('voice-interface');
+        const voiceStatus = document.getElementById('voice-status');
+        const voiceWaveContainer = document.querySelector('.voice-wave-container');
+        const videoInterface = document.getElementById('video-interface');
+        const videoPlayer = document.getElementById('video-player');
+        const videoThumbnail = document.getElementById('video-thumbnail');
+        const videoTitle = document.getElementById('video-title');
+        const videoLoading = document.getElementById('video-loading');
+        const playButton = document.getElementById('play-button');
+        const transitionOverlay = document.getElementById('transition-overlay');
+        
+        const targetText = `Olá, Aurora!
+Estamos apresentando agora sobre Cnidários e Poríferos e gostaríamos que você participasse conosco como se fosse uma aluna da sala. Por favor, ajude a expor os principais pontos, explicando de forma clara as características, diferenças e a importância desses grupos.`;
+
+        const auroraResponse = `Olá! Fico muito feliz em participar da sua apresentação sobre Cnidários e Poríferos! 
+
+Vou atuar como uma aluna interessada e ajudar a destacar os pontos mais importantes desses fascinantes grupos de animais aquáticos. 
+
+Estou pronta para começar! Por favor, aguarde um momento enquanto me preparo para nossa conversa.`;
+
+        // Video configuration
+        const videoConfig = [
+          {
+            src: 'assets/video/video1.mp4',
+            title: 'Apresentação sobre Cnidários',
+            loadingText: 'Carregando conteúdo sobre Cnidários...'
+          },
+          {
+            src: 'assets/video/video2.mp4',
+            title: 'Apresentação sobre Poríferos',
+            loadingText: 'Carregando conteúdo sobre Poríferos...'
+          }
+        ];
+
+        let typingSound = null;
+        let auroraVoice = null;
+        let isTyping = false;
+        let isFullscreen = false;
+        let isTypingSoundPlaying = false;
+        let currentVideoIndex = 0;
+        let currentAudioIndex = 1; // Start with aurora1.mp3
+
+        function playTypingSound() {
+          if (typingSound && !isTypingSoundPlaying) {
+            isTypingSoundPlaying = true;
+            typingSound.currentTime = 0;
+            typingSound.play().catch(e => console.log('Audio play failed:', e));
+          }
+        }
+
+        function stopTypingSound() {
+          if (typingSound && isTypingSoundPlaying) {
+            isTypingSoundPlaying = false;
+            typingSound.pause();
+            typingSound.currentTime = 0;
+          }
+        }
+
+        function playAuroraVoice() {
+          if (auroraVoice) {
+            auroraVoice.currentTime = 0;
+            auroraVoice.play().catch(e => console.log('Aurora voice play failed:', e));
+          }
+        }
+
+        function stopAuroraVoice() {
+          if (auroraVoice) {
+            auroraVoice.pause();
+            auroraVoice.currentTime = 0;
+          }
+        }
+
+        function typeText(text, element, speed = 50) {
+          return new Promise((resolve) => {
+            let index = 0;
+            element.textContent = '';
+            
+            function typeChar() {
+              if (index < text.length) {
+                const char = text[index];
+                element.textContent += char;
+                index++;
+                
+                // Play typing sound for each character
+                if (char !== ' ' && char !== '\n') {
+                  playTypingSound();
+                }
+                
+                setTimeout(typeChar, speed);
+              } else {
+                // Add blinking cursor at the end
+                const cursor = document.createElement('span');
+                cursor.className = 'typing-cursor';
+                element.appendChild(cursor);
+                stopTypingSound();
+                resolve();
+              }
+            }
+            
+            typeChar();
+          });
+        }
+
+        function addMessage(text, isUser = false) {
+          const messageDiv = document.createElement('div');
+          messageDiv.className = `message ${isUser ? 'user' : 'aurora'}`;
+          messageDiv.textContent = text;
+          chatMessages.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          return messageDiv;
+        }
+
+        function showTypingIndicator() {
+          const typingDiv = document.createElement('div');
+          typingDiv.className = 'typing-indicator';
+          typingDiv.innerHTML = `
+            Aurora está digitando
+            <div class="typing-dots">
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+              <div class="typing-dot"></div>
+            </div>
+          `;
+          chatMessages.appendChild(typingDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          return typingDiv;
+        }
+
+        function removeTypingIndicator(typingDiv) {
+          if (typingDiv && typingDiv.parentNode) {
+            typingDiv.parentNode.removeChild(typingDiv);
+          }
+        }
+
+        function enterFullscreen() {
+          if (!isFullscreen) {
+            if (document.documentElement.requestFullscreen) {
+              document.documentElement.requestFullscreen();
+            } else if (document.documentElement.webkitRequestFullscreen) {
+              document.documentElement.webkitRequestFullscreen();
+            } else if (document.documentElement.msRequestFullscreen) {
+              document.documentElement.msRequestFullscreen();
+            }
+            isFullscreen = true;
+          }
+        }
+
+        function showTransitionOverlay() {
+          transitionOverlay.classList.add('active');
+          return new Promise(resolve => setTimeout(resolve, 400));
+        }
+
+        function hideTransitionOverlay() {
+          transitionOverlay.classList.remove('active');
+          return new Promise(resolve => setTimeout(resolve, 400));
+        }
+
+        function showChatInterface() {
+          return new Promise(async (resolve) => {
+            await showTransitionOverlay();
+            chatContainer.classList.add('active');
+            await hideTransitionOverlay();
+            resolve();
+          });
+        }
+
+        function showVoiceInterface() {
+          return new Promise(async (resolve) => {
+            await showTransitionOverlay();
+            voiceInterface.classList.add('active');
+            await hideTransitionOverlay();
+            resolve();
+          });
+        }
+
+        function hideVoiceInterface() {
+          return new Promise(async (resolve) => {
+            await showTransitionOverlay();
+            voiceInterface.classList.remove('active');
+            await hideTransitionOverlay();
+            resolve();
+          });
+        }
+
+        function showVideoInterface() {
+          return new Promise(async (resolve) => {
+            await showTransitionOverlay();
+            videoInterface.classList.add('active');
+            await hideTransitionOverlay();
+            resolve();
+          });
+        }
+
+        function hideVideoInterface() {
+          return new Promise(async (resolve) => {
+            await showTransitionOverlay();
+            videoInterface.classList.remove('active');
+            await hideTransitionOverlay();
+            resolve();
+          });
+        }
+
+        function moveWavesToSide(direction) {
+          voiceWaveContainer.classList.remove('moved-left', 'moved-right');
+          if (direction === 'left') {
+            voiceWaveContainer.classList.add('moved-left');
+          } else if (direction === 'right') {
+            voiceWaveContainer.classList.add('moved-right');
+          }
+        }
+
+        function resetWavesPosition() {
+          voiceWaveContainer.classList.remove('moved-left', 'moved-right');
+        }
+
+        function loadVideo(videoIndex) {
+          const config = videoConfig[videoIndex];
+          videoTitle.textContent = config.title;
+          videoLoading.textContent = config.loadingText;
+          videoThumbnail.classList.remove('hidden');
+          
+          return new Promise((resolve, reject) => {
+            // Clear previous source
+            videoPlayer.src = '';
+            videoPlayer.load();
+            
+            // Set new source
+            videoPlayer.src = config.src;
+            videoPlayer.load();
+            
+            const handleLoadedData = () => {
+              videoPlayer.removeEventListener('loadeddata', handleLoadedData);
+              videoPlayer.removeEventListener('error', handleError);
+              console.log(`Video ${videoIndex + 1} loaded successfully`);
+              resolve();
+            };
+            
+            const handleError = (e) => {
+              videoPlayer.removeEventListener('loadeddata', handleLoadedData);
+              videoPlayer.removeEventListener('error', handleError);
+              console.error(`Error loading video ${videoIndex + 1}:`, e);
+              reject(e);
+            };
+            
+            videoPlayer.addEventListener('loadeddata', handleLoadedData);
+            videoPlayer.addEventListener('error', handleError);
+          });
+        }
+
+        function playVideoFullscreen() {
+          return new Promise((resolve) => {
+            videoThumbnail.classList.add('hidden');
+            
+            // Play video
+            const playPromise = videoPlayer.play();
+            
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('Video started playing');
+                
+                // Request fullscreen after video starts
+                setTimeout(() => {
+                  if (videoPlayer.requestFullscreen) {
+                    videoPlayer.requestFullscreen().catch(e => console.log('Fullscreen failed:', e));
+                  } else if (videoPlayer.webkitRequestFullscreen) {
+                    videoPlayer.webkitRequestFullscreen();
+                  } else if (videoPlayer.msRequestFullscreen) {
+                    videoPlayer.msRequestFullscreen();
+                  }
+                }, 500);
+                
+              }).catch(e => {
+                console.error('Video play failed:', e);
+                // Continue anyway
+              });
+            }
+            
+            videoPlayer.addEventListener('ended', () => {
+              console.log('Video ended');
+              resolve();
+            }, { once: true });
+          });
+        }
+
+        function playAuroraAudio(audioIndex) {
+          return new Promise(async (resolve) => {
+            const audioSrc = `assets/songs/aurora${audioIndex}.mp3`;
+            auroraVoice = new Audio(audioSrc);
+            auroraVoice.volume = 0.7;
+            
+            let videoLoaded = false;
+            let videoStarted = false;
+            
+            // Calculate when to show video (10 seconds before end)
+            auroraVoice.addEventListener('loadedmetadata', () => {
+              const duration = auroraVoice.duration;
+              const videoShowTime = duration - 10; // 10 seconds before end
+              
+              console.log(`Audio ${audioIndex} duration: ${duration}s, video will show at: ${videoShowTime}s`);
+              
+              if (videoShowTime > 0 && currentVideoIndex < videoConfig.length) {
+                setTimeout(async () => {
+                  try {
+                    console.log(`Showing video ${currentVideoIndex + 1} for audio ${audioIndex}`);
+                    // Move waves to side and show video
+                    moveWavesToSide('left');
+                    await showVideoInterface();
+                    await loadVideo(currentVideoIndex);
+                    videoLoaded = true;
+                    
+                    // Auto-play video when audio ends
+                    auroraVoice.addEventListener('ended', async () => {
+                      if (videoLoaded && !videoStarted) {
+                        videoStarted = true;
+                        console.log(`Starting video ${currentVideoIndex + 1}`);
+                        await playVideoFullscreen();
+                        resolve();
+                      }
+                    }, { once: true });
+                    
+                  } catch (error) {
+                    console.error('Error loading video:', error);
+                    // Continue without video
+                    auroraVoice.addEventListener('ended', () => {
+                      resolve();
+                    }, { once: true });
+                  }
+                }, videoShowTime * 1000);
+              } else {
+                // No video for this audio
+                auroraVoice.addEventListener('ended', () => {
+                  resolve();
+                }, { once: true });
+              }
+            });
+            
+            auroraVoice.play().catch(e => {
+              console.error('Audio play failed:', e);
+              resolve();
+            });
+          });
+        }
+
+        // Play button click handler
+        playButton.addEventListener('click', async () => {
+          await playVideoFullscreen();
+        });
+
+        startButton.addEventListener('click', async function() {
+          if (isTyping) return;
+          isTyping = true;
+
+          // Enter fullscreen
+          enterFullscreen();
+
+          // Load typing sound
+          typingSound = new Audio('assets/songs/digitar.mp3');
+          typingSound.loop = true;
+          typingSound.volume = 0.3;
+
+          // Show permanent cursor block
+          cursorBlock.style.display = 'block';
+
+          // Change title
+          mainTitle.textContent = 'Irei lhe ajudar como hoje?';
+          mainTitle.style.transition = 'all 0.5s ease';
+
+          // Expand button with smoother transition
+          startButton.classList.add('expanded');
+          startButton.innerHTML = '<textarea class="typing-text" readonly></textarea>';
+          
+          const textArea = startButton.querySelector('.typing-text');
+          
+          // Wait for expansion animation
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          // Start typing animation with sound
+          await typeText(targetText, textArea, 35);
+          
+          // Wait 2 seconds then auto-send
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Show chat interface with transition
+          await showChatInterface();
+          
+          // Add user message
+          addMessage(targetText, true);
+          
+          // Show typing indicator
+          const typingIndicator = showTypingIndicator();
+          
+          // Wait a bit then show Aurora's response with typing animation
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          removeTypingIndicator(typingIndicator);
+          
+          // Add Aurora message with typing animation
+          const auroraMessageDiv = document.createElement('div');
+          auroraMessageDiv.className = 'message aurora';
+          chatMessages.appendChild(auroraMessageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          
+          // Type Aurora's response with sound
+          await typeText(auroraResponse, auroraMessageDiv, 30);
+          
+          // Wait then show voice interface with transition
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          await showVoiceInterface();
+          
+          // Start the audio/video sequence
+          await startAudioVideoSequence();
+        });
+
+        async function startAudioVideoSequence() {
+          try {
+            // Play first audio (aurora1.mp3) with first video
+            currentVideoIndex = 0;
+            voiceStatus.textContent = "Aurora está explicando sobre Cnidários e Poríferos...";
+            console.log('Starting audio 1 with video 1');
+            await playAuroraAudio(1);
+            
+            // Wait for video to finish, then hide video interface
+            console.log('Hiding video interface after video 1');
+            await hideVideoInterface();
+            resetWavesPosition();
+            
+            // Play second audio (aurora2.mp3) with second video
+            currentVideoIndex = 1;
+            voiceStatus.textContent = "Aurora continua a explicação...";
+            console.log('Starting audio 2 with video 2');
+            await playAuroraAudio(2);
+            
+            // Wait for second video to finish
+            console.log('Hiding video interface after video 2');
+            await hideVideoInterface();
+            resetWavesPosition();
+            
+            // Play third audio (aurora3.mp3) - no video for this one
+            currentVideoIndex = 2; // No video for this
+            voiceStatus.textContent = "Aurora finaliza a apresentação...";
+            console.log('Starting audio 3 (no video)');
+            await playAuroraAudio(3);
+            
+            // Final transition back to initial state
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            await hideVoiceInterface();
+            
+            // Reset for potential restart
+            currentVideoIndex = 0;
+            currentAudioIndex = 1;
+            
+          } catch (error) {
+            console.error('Error in audio/video sequence:', error);
+            // Continue anyway
+            await hideVoiceInterface();
+          }
+        }
+      })();
+
+      // Snowfall background using Canvas
+      (function () {
+        const canvas = document.getElementById('snow');
+        const ctx = canvas.getContext('2d');
+        let width = 0, height = 0, deviceRatio = Math.min(window.devicePixelRatio || 1, 2);
+        let snowflakes = [];
+
+        function resize() {
+          width = window.innerWidth;
+          height = window.innerHeight;
+          canvas.width = Math.floor(width * deviceRatio);
+          canvas.height = Math.floor(height * deviceRatio);
+          canvas.style.width = width + 'px';
+          canvas.style.height = height + 'px';
+          ctx.setTransform(deviceRatio, 0, 0, deviceRatio, 0, 0);
+          // Adjust density for larger screens
+          const targetCount = Math.min(220, Math.floor((width * height) / 18000));
+          if (snowflakes.length < targetCount) {
+            for (let i = snowflakes.length; i < targetCount; i++) snowflakes.push(createFlake());
+          } else if (snowflakes.length > targetCount) {
+            snowflakes = snowflakes.slice(0, targetCount);
+          }
+        }
+
+        function createFlake() {
+          const size = Math.random() * 2.2 + 0.8; // 0.8 - 3 px
+          return {
+            x: Math.random() * width,
+            y: Math.random() * height,
+            r: size,
+            speedY: 0.4 + Math.random() * 1.2 + size * 0.06,
+            speedX: (Math.random() - 0.5) * 0.6,
+            sway: Math.random() * 1.4 + 0.4,
+            phase: Math.random() * Math.PI * 2,
+            alpha: 0.65 + Math.random() * 0.3
+          };
+        }
+
+        function update(flake, dt) {
+          flake.phase += 0.8 * dt;
+          flake.x += flake.speedX + Math.cos(flake.phase) * flake.sway * 0.08;
+          flake.y += flake.speedY;
+          if (flake.x < -5) flake.x = width + 5;
+          if (flake.x > width + 5) flake.x = -5;
+          if (flake.y > height + 5) {
+            flake.x = Math.random() * width;
+            flake.y = -10;
+          }
+        }
+
+        function draw(flake) {
+          ctx.globalAlpha = flake.alpha;
+          ctx.fillStyle = '#E9F7FF';
+          ctx.beginPath();
+          ctx.arc(flake.x, flake.y, flake.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        let last = performance.now();
+        function loop(now) {
+          const dt = Math.min(32, now - last) / 1000;
+          last = now;
+          ctx.clearRect(0, 0, width, height);
+          for (let i = 0; i < snowflakes.length; i++) {
+            update(snowflakes[i], dt);
+            draw(snowflakes[i]);
+          }
+          requestAnimationFrame(loop);
+        }
+
+        window.addEventListener('resize', resize);
+        resize();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+  </body>
+  </html>
+
+
